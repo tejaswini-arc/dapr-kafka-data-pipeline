@@ -1,0 +1,119 @@
+
+
+What is Dapr?
+Dapr (Distributed Application Runtime) is an open-source runtime that helps developers build distributed and microservices-based applications by providing common infrastructure capabilities through APIs and sidecars.
+In this POC, Dapr does not replace Kafka's durability. Kafka is the durable message broker; Dapr provides the messaging abstraction, delivery, retries, and integration.
+
+Dapr provides capabilities such as
+1. Pub/Sub
+2. Service-to-service invocation
+3. State management
+4. Secrets
+5. Distributed locks
+6. Bindings
+7. Configuration
+8. Workflows
+9. Observability
+
+
+Target Architecture :
+
+                         ┌──────────────────────┐
+                         │      Client / UI      │
+                         │  POST /orders         │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                    ┌─────────────────────────────┐
+                    │       Spring Boot            │
+                    │        order-app             │
+                    │                              │
+                    │  OrderService               │
+                    │  - Receives Order           │
+                    │  - Publishes through Dapr   │
+                    └──────────────┬──────────────┘
+                                   │
+                                   │ HTTP
+                                   ▼
+                    ┌─────────────────────────────┐
+                    │       Dapr Sidecar           │
+                    │      order-app-dapr          │
+                    │                              │
+                    │ Dapr HTTP :3500             │
+                    │ Pub/Sub abstraction          │
+                    └──────────────┬──────────────┘
+                                   │
+                                   │ Kafka protocol
+                                   ▼
+                    ┌─────────────────────────────┐
+                    │           Kafka              │
+                    │                              │
+                    │ Topic: orders                │
+                    │ Partitions: 0, 1, 2          │
+                    │                              │
+                    │ Consumer Group:              │
+                    │ order-app-group              │
+                    └──────────────┬──────────────┘
+                                   │
+                                   │ Consume
+                                   ▼
+                    ┌─────────────────────────────┐
+                    │       Dapr Sidecar           │
+                    │      order-app-dapr          │
+                    │                              │
+                    │ Subscription: orders         │
+                    │ Route: POST /consume         │
+                    └──────────────┬──────────────┘
+                                   │
+                                   │ HTTP
+                                   ▼
+                    ┌─────────────────────────────┐
+                    │       Spring Boot            │
+                    │        /consume              │
+                    │                              │
+                    │  1. Receive CloudEvent       │
+                    │  2. Extract data             │
+                    │  3. Convert to Order         │
+                    │  4. Save to MySQL            │
+                    └──────────────┬──────────────-┘
+                                   │
+                                   ▼
+                    ┌─────────────────────────────┐
+                    │           MySQL             │
+                    │          ordersdb           │
+                    │                             │
+                    │ Consumed order records      │
+                    └─────────────────────────────┘
+
+
+
+
+Docker Architecture
+
+The Docker environment contains:
+
+
+Docker Host
+│
+├── Zookeeper
+│   └── Port 2181
+│
+├── Kafka
+│   ├── Internal: kafka:29092
+│   └── External: localhost:9092
+│
+├── MySQL
+│   └── Database: ordersdb
+│
+├── order-app
+│   └── Spring Boot :8080
+│
+└── order-app-dapr
+    ├── Dapr HTTP :3500
+    └── Dapr gRPC :50001
+
+
+All application containers are connected to:
+
+
+app-network
