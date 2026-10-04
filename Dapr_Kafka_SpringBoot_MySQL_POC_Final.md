@@ -1538,6 +1538,13 @@ docker logs -f order-app
 # Dapr logs
 docker logs -f order-app-dapr
 
+#create topic if not exists
+docker exec kafka kafka-topics --create `
+  --topic orders `
+  --bootstrap-server kafka:29092 `
+  --partitions 3 `
+  --replication-factor 1
+
 # Kafka topics
 docker exec kafka kafka-topics --list --bootstrap-server kafka:29092
 
