@@ -1556,8 +1556,8 @@ docker exec kafka kafka-topics --describe `
 # MySQL shell
 docker exec -it mysql mysql -uroot -proot ordersdb
 
-# Dapr health
-Invoke-RestMethod http://localhost:3500/v1.0/healthz
+# Dapr status
+dapr list
 
 # Docker network test
 docker run --rm `
